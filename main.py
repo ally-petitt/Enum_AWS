@@ -11,4 +11,5 @@ DOMAIN = args.domain
 
 
 enum_s3 = EnumS3(DOMAIN)
-enum_s3.test()
+enum_s3.run_all_enum_checks()
+print(enum_s3.reverse_domain_name)
