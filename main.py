@@ -6,23 +6,27 @@ from modules.enum_s3 import EnumS3
 argParser = argparse.ArgumentParser()
 argParser.add_argument("-d", "--domain", required=True,
                             help="domain name of website to enumerate")
-argParser.add_argument("-u", "--check-s3-upload", required=False,
-                            action="store_true", help="attempt to upload to the s3 bucket")
-argParser.add_argument("-dl", "--check-s3-download", required=False,
-                            action="store_true", help="attempt to download from the s3 bucket")
+argParser.add_argument("-u", "--attempt-s3-upload", required=False,
+                            help="attempt to upload a file to the s3 bucket")
+argParser.add_argument("-dl", "--attempt-s3-download", required=False,
+                            action="store_true", help="attempt to download the listed \
+                            files from the s3 bucket in the inputted directory")
 argParser.add_argument("-ls", "--list-s3-bucket", required=False,
                             action="store_true", help="attempt to list the contents of the s3 bucket")
 argParser.add_argument("-a", "--all-checks", required=False,
                             action="store_true", help="run all enumeration checks")
+argParser.add_argument("-o", "--output-dir", required=False, help="Directory to output \
+                            downloaded and log files into (default: enum_aws_output/)")
 
 args = argParser.parse_args()
 
 
 enum_s3_options = {
     "domain": args.domain,
-    "check_s3_upload": args.check_s3_upload or args.all_checks,
-    "check_s3_download": args.check_s3_download or args.all_checks,
+    "attempt_s3_upload": args.attempt_s3_upload,
+    "attempt_s3_download": args.attempt_s3_download or args.all_checks,
     "list_s3_bucket": args.list_s3_bucket or args.all_checks,
+    "output_dir": args.output_dir
 }
 
 

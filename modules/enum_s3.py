@@ -1,9 +1,7 @@
-import logging
-import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 from botocore.exceptions import ClientError
-import re
+import re, os, logging, boto3
 
 # TODO: figure out a better way to implement logging
 logging.basicConfig(encoding='utf-8', level=logging.INFO)
@@ -40,7 +38,6 @@ class EnumS3:
         Uses regex to get region name out of `reverse_domain_name` and store it
         in the region_name attribute.
 
-
     check_bucket()
         Checks if the reverse_domain_name string is consistent with the naming
         conventions of an S3 bucket
@@ -65,6 +62,13 @@ class EnumS3:
         """
 
         self.options = options
+
+        # set defaults if they were not selected by user
+        if not self.options["output_dir"]: self.options["output_dir"] = "enum_aws_output"
+
+        # TODO: change this to not create directory until it is needed
+        if not os.path.exists(self.options["output_dir"]): 
+            os.mkdir(self.options["output_dir"])
 
     
     def run_all_enum_checks(self) -> None:
@@ -115,20 +119,23 @@ class EnumS3:
         """
 
         if not self.region_name: return
+        s3_client = boto3.client('s3', region_name=self.region_name, config=Config(signature_version=UNSIGNED))
 
-        if self.options["list_s3_bucket"]: self.check_bucket_listing()
-        if self.options["check_s3_upload"]: self.check_bucket_upload()
-        if self.options["check_s3_download"]: self.check_bucket_download()
+        if self.options["attempt_s3_upload"]: self.check_bucket_upload(s3_client)
+        if self.options["attempt_s3_download"]: 
+            filenames = self.check_bucket_listing(s3_client)
+            self.check_bucket_download(s3_client, filenames)
+        elif self.options["list_s3_bucket"]: self.check_bucket_listing(s3)
         
 
     
-    def check_bucket_listing(self) -> None:
+    def check_bucket_listing(self, s3: object) -> None:
         """ 
         Check if permissions allow listing of bucket permissions
         """
 
-        s3client = boto3.client('s3', region_name=self.region_name, config=Config(signature_version=UNSIGNED))
-        bucket_files = s3client.list_objects(Bucket=self.options["domain"])["Contents"]
+        # s3client = boto3.client('s3', region_name=self.region_name, config=Config(signature_version=UNSIGNED))
+        bucket_files = s3.list_objects(Bucket=self.options["domain"])["Contents"]
 
         if not bucket_files:
             logging.info("Unable to list contents of bucket")
@@ -136,25 +143,51 @@ class EnumS3:
         else:
             logging.info("Successfully recieved contents of bucket")
             logging.info("Filename \t Size \t Last Modified")
+
+            filenames = []
             for file_ in bucket_files:
+                filenames += [file_['Key']]
                 logging.info(f"{file_['Key']} \t {file_['Size']} \t {file_['LastModified']}")
+            
+            return filenames
 
 
-    def check_bucket_download(self) -> None:
+    def check_bucket_download(self, s3: object, filenames: list) -> None:
         """ 
         Check if bucket permissions allow for downloading files
+
+        Parameters
+        ----------
+        s3 : object 
+            the s3 client used to interact with the bucket
+        filenames : list
+            list of filenames returned from self.check_bucket_listing()
         """
 
-        s3_client = boto3.client('s3')
+        download_dir = f'{self.options["output_dir"]}/s3_download/'
+        os.mkdir(download_dir)
+
+        logging.info("downloading files")
+        for filename in filenames:
+            s3.download_file(
+                self.options["domain"], 
+                filename, 
+                f'{download_dir}/{filename}'
+            )
 
 
-    def check_bucket_upload(self) -> None:
+    def check_bucket_upload(self, s3: object) -> None:
         """ 
         Check if bucket permissions allow for uploading files
         """
 
-        s3_client = boto3.client('s3')
+        filename = self.options["attempt_s3_upload"]
 
+        try:
+            s3.upload_file(filename, self.options["domain"], filename)
+            logging.info(f"Successfully uploaded {filename} to the bucket")
+        except:
+            logging.warn("Unable to upload to the bucket")
     
     def get_region_name(self) -> None:
         """
@@ -166,7 +199,7 @@ class EnumS3:
         self.region_name = re.search(pattern, self.reverse_domain_name).group()
         
         if self.region_name: logging.info(f"Bucket region is {self.region_name}")
-        else: logger.info("Unable to find bucket region. Cannot run enumeration checks")
+        else: logging.info("Unable to find bucket region. Cannot run enumeration checks")
 
 
 
