@@ -1,5 +1,10 @@
 import argparse
-from modules.enum_s3 import EnumS3
+from modules import EnumS3
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 
 
 # collect user arguments
@@ -18,18 +23,23 @@ argParser.add_argument("-a", "--all-checks", required=False,
 argParser.add_argument("-o", "--output-dir", required=False, help="Directory to output \
                             downloaded and log files into (default: enum_aws_output/)")
 
-args = argParser.parse_args()
 
 
-enum_s3_options = {
-    "domain": args.domain,
-    "attempt_s3_upload": args.attempt_s3_upload,
-    "attempt_s3_download": args.attempt_s3_download or args.all_checks,
-    "list_s3_bucket": args.list_s3_bucket or args.all_checks,
-    "output_dir": args.output_dir
-}
+def main():
+    args = argParser.parse_args()
+
+    enum_s3_options = {
+        "domain": args.domain,
+        "attempt_s3_upload": args.attempt_s3_upload,
+        "attempt_s3_download": args.attempt_s3_download or args.all_checks,
+        "list_s3_bucket": args.list_s3_bucket or args.all_checks,
+        "output_dir": args.output_dir
+    }
+
+    enum_s3 = EnumS3(enum_s3_options)
+    enum_s3.run_all_enum_checks()
 
 
 
-enum_s3 = EnumS3(enum_s3_options)
-enum_s3.run_all_enum_checks()
+if __name__ == "__main__":
+    main()
