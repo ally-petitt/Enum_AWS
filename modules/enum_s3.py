@@ -1,7 +1,11 @@
 import logging
+import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
+from botocore.exceptions import ClientError
 
 # TODO: figure out a better way to implement logging
-logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(encoding='utf-8', level=logging.INFO)
 
 class EnumS3:
     '''
@@ -102,8 +106,8 @@ class EnumS3:
         """
 
         if self.options["list_s3_bucket"]: self.check_bucket_listing()
-        if self.options["check_s3_upload"]: logging.debug("check upload")
-        if self.options["check_s3_download"]: logging.debug("check download")
+        if self.options["check_s3_upload"]: self.check_bucket_upload()
+        if self.options["check_s3_download"]: self.check_bucket_download()
         
 
     
@@ -111,8 +115,17 @@ class EnumS3:
         """ 
         Check if permissions allow listing of bucket permissions
         """
+        
+        s3client = boto3.client('s3', region_name='us-west-2', config=Config(signature_version=UNSIGNED))
+        bucket_files = s3client.list_objects(Bucket=self.options["domain"])["Contents"]
 
-        pass
+        if not bucket_files:
+            logging.info("Unable to list contents of bucket")
+            return
+
+        logging.info("Filename \t Size \t Last Modified")
+        for file_ in bucket_files:
+            logging.info(f"{file_['Key']} \t {file_['Size']} \t {file_['LastModified']}")
 
 
     def check_bucket_download(self) -> None:
@@ -120,7 +133,7 @@ class EnumS3:
         Check if bucket permissions allow for downloading files
         """
 
-        pass
+        s3_client = boto3.client('s3')
 
 
     def check_bucket_upload(self) -> None:
@@ -128,5 +141,5 @@ class EnumS3:
         Check if bucket permissions allow for uploading files
         """
 
-        pass
+        s3_client = boto3.client('s3')
 
