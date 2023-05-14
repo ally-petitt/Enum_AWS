@@ -3,6 +3,7 @@ import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 from botocore.exceptions import ClientError
+import re
 
 # TODO: figure out a better way to implement logging
 logging.basicConfig(encoding='utf-8', level=logging.INFO)
@@ -20,6 +21,12 @@ class EnumS3:
     domain_ip : str
         IP address of `domain` that was collected from a name server
     reverse_domain_name : str
+        The domain name that was returned from a reverse DNS lookup of the IP address
+    region_name : str
+        The name of the AWS region that the bucket is located in
+    options : dict
+        The options that were selected by the user (see `enum_s3_options` variable
+        in ../main.py)
 
 
     Methods
@@ -29,6 +36,9 @@ class EnumS3:
     lookup_domain()
         Look up the IP address associated with the domain name and do a reverse 
         DNS lookup to populate the attributes domain_ip and reverse_domain_name
+    get_region_name()
+        Uses regex to get region name out of `reverse_domain_name` and store it
+        in the region_name attribute.
 
 
     check_bucket()
@@ -89,11 +99,10 @@ class EnumS3:
         conventions of an S3 bucket
         """
 
-        import re
-
         # s3-website-us-west-2.amazonaws.com
         pattern = r"s3-website-(\w+-)+\w+\.amazonaws\.com$"
         self.isBucket = bool(re.search(pattern, self.reverse_domain_name))
+        self.get_region_name()
 
         if self.isBucket: logging.info("Domain is an S3 bucket")
         else: logging.warning("Domain is NOT an S3 bucket")
@@ -105,6 +114,8 @@ class EnumS3:
         if permitted in user settings
         """
 
+        if not self.region_name: return
+
         if self.options["list_s3_bucket"]: self.check_bucket_listing()
         if self.options["check_s3_upload"]: self.check_bucket_upload()
         if self.options["check_s3_download"]: self.check_bucket_download()
@@ -115,17 +126,18 @@ class EnumS3:
         """ 
         Check if permissions allow listing of bucket permissions
         """
-        
-        s3client = boto3.client('s3', region_name='us-west-2', config=Config(signature_version=UNSIGNED))
+
+        s3client = boto3.client('s3', region_name=self.region_name, config=Config(signature_version=UNSIGNED))
         bucket_files = s3client.list_objects(Bucket=self.options["domain"])["Contents"]
 
         if not bucket_files:
             logging.info("Unable to list contents of bucket")
-            return
-
-        logging.info("Filename \t Size \t Last Modified")
-        for file_ in bucket_files:
-            logging.info(f"{file_['Key']} \t {file_['Size']} \t {file_['LastModified']}")
+        
+        else:
+            logging.info("Successfully recieved contents of bucket")
+            logging.info("Filename \t Size \t Last Modified")
+            for file_ in bucket_files:
+                logging.info(f"{file_['Key']} \t {file_['Size']} \t {file_['LastModified']}")
 
 
     def check_bucket_download(self) -> None:
@@ -142,4 +154,19 @@ class EnumS3:
         """
 
         s3_client = boto3.client('s3')
+
+    
+    def get_region_name(self) -> None:
+        """
+        Uses regex to get region name out of `reverse_domain_name` and store it
+        in the region_name attribute. 
+        """
+
+        pattern = r"(\w+-)(\w+-)[0-9]"
+        self.region_name = re.search(pattern, self.reverse_domain_name).group()
+        
+        if self.region_name: logging.info(f"Bucket region is {self.region_name}")
+        else: logger.info("Unable to find bucket region. Cannot run enumeration checks")
+
+
 
