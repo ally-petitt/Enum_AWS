@@ -1,5 +1,6 @@
 # Tool Overview
-Enum_AWS is a tool to automate the enumeration of AWS instances to aide in cloud security assessments.
+Enum_AWS is a tool to automate the enumeration of AWS instances to aide in cloud security assessments. In particular, enumerate public S3 buckets for the ability to list, upload,
+and download files.
 
 
 ## Usage
@@ -21,6 +22,27 @@ options:
   -a, --all-checks      run all enumeration checks
 ```
 
-## Future Steps
+Example usage on http://flaws.cloud
 
-* Add ability to check S3 bucket permissions
+```
+$ python ./main.py -d flaws.cloud -a -o output/ -u upload_test.txt
+2023-05-13 22:50:57,841 - Domain IP address is 52.218.233.58
+2023-05-13 22:50:57,888 - Result of reverse DNS lookup is domain name s3-website-us-west-2.amazonaws.com
+2023-05-13 22:50:57,888 - Bucket region is us-west-2
+2023-05-13 22:50:57,888 - Domain is an S3 bucket
+2023-05-13 22:50:58,249 - Unable to upload to the bucket
+2023-05-13 22:50:58,552 - Successfully recieved contents of bucket
+2023-05-13 22:50:58,553 - Filename       Size    Last Modified
+2023-05-13 22:50:58,553 - hint1.html     2575    2017-03-14 03:00:38+00:00
+2023-05-13 22:50:58,553 - hint2.html     1707    2017-03-03 04:05:17+00:00
+2023-05-13 22:50:58,553 - hint3.html     1101    2017-03-03 04:05:11+00:00
+2023-05-13 22:50:58,553 - index.html     3162    2020-05-22 18:16:45+00:00
+2023-05-13 22:50:58,553 - logo.png       15979   2018-07-10 16:47:16+00:00
+2023-05-13 22:50:58,553 - robots.txt     46      2017-02-27 01:59:28+00:00
+2023-05-13 22:50:58,553 - secret-dd02c7c.html    1051    2017-02-27 01:59:30+00:00
+2023-05-13 22:50:58,553 - downloading files
+```
+
+## Future Steps
+* Add more enumeration methods for more cloud services
+* Refactor code to make it cleaner
