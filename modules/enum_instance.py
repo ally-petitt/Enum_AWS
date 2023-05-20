@@ -9,6 +9,8 @@
 #########################################################
 
 import logging
+import socket
+
 from modules import Util
 
 
@@ -26,26 +28,33 @@ class EnumInstance:
         The type of AWS instance (ec2, s3, etc.)
     domain : str
         The domain name given by the user
-    reverse_domain : str
+    reverse_domain_name : str
         The domain name found through reverse DNS lookup
 
     """
-    
+
     def __init__(self, domain: str) -> None:
         domain_info = util.parse_domain(domain) 
-        self.domain = domain_info["hostname"]
-        self.protocol = domain_info["scheme"]
+        self.domain = domain_info["domain"]
+        self.protocol = domain_info["protocol"]
 
         # automatically perform enumerations on initialization of class
-        find_instance_type()
+        self.find_instance_type()
 
     
     def find_instance_type(self) -> None:
         logger.info("Determining instance type...")
 
-        domain_info = util.parse_domain(args.domain)
+        domain_info = util.parse_domain(self.domain)
 
-        self.check_aws_protocol()
+        if self.check_protocol() and self.type \
+            or self.lookup_domain() and self.type:
+            logger.info(f"Instance was found to be of type {self.type}")
+        
+        else:
+            logger.info("Instance could not be identified. Exiting...")
+            exit()
+
 
 
 
@@ -55,13 +64,11 @@ class EnumInstance:
         DNS lookup to populate the attributes domain_ip and reverse_domain_name
         """
 
-        import socket
-
         try:
-            self.domain_ip = socket.gethostbyname(self.domain)
-            logger.info(f"Domain IP address is {self.domain_ip}")
+            domain_ip = socket.gethostbyname(self.domain)
+            logger.info(f"Domain IP address is {domain_ip}")
 
-            self.reverse_domain_name = socket.gethostbyaddr(self.domain_ip)[0]
+            self.reverse_domain_name = socket.gethostbyaddr(domain_ip)[0]
             logger.info(f"Result of reverse DNS lookup is domain name {self.reverse_domain_name}")
         except Exception as e:
             logger.error(f"Domain lookup failed with error message: {e}")
@@ -71,3 +78,28 @@ class EnumInstance:
     def check_protocol(self) -> None:
         if self.protocol == "s3":
             self.type = "s3"
+            return True 
+        
+        else:
+            return False
+
+
+    def check_bucket(self) -> None:
+        """ 
+        Iterates through potential instance types and populates value of self.type
+        if a type is found to be valid
+        """
+        ## TODO: improve regex
+        # s3-website-us-west-2.amazonaws.com
+        pattern = r"^{}-.*?\.amazonaws\.com$"
+        types = ["s3", "ec2"]
+
+        for instance_type in types:
+            isType = bool(re.search(pattern.format(instance_type), self.domain))
+
+            if isType: 
+                logger.info(f"Instance was found to be of type {self.type}")
+                self.get_region_name()
+                return True
+
+        return False

@@ -90,23 +90,6 @@ class EnumS3:
         if self.isBucket: self.enum_bucket_permissions()
 
 
-    
-    def check_bucket(self) -> None:
-        """ 
-        Checks if the options["domain"] string is consistent with the naming
-        conventions of an S3 bucket
-        """
-        ## TODO: improve regex
-        # s3-website-us-west-2.amazonaws.com
-        pattern = r"^s3-.*?\.amazonaws\.com$"
-        self.isBucket = bool(re.search(pattern, self.options["domain"]))
-
-        if self.isBucket: 
-            logger.info("Domain is an S3 bucket")
-            self.get_region_name()
-        else: 
-            logger.warning("Domain is NOT an S3 bucket")
-
 
     def enum_bucket_permissions(self) -> None:
         """ 
@@ -203,7 +186,7 @@ class EnumS3:
         """
 
         pattern = r"\w+-\w+-[0-9]"
-        self.region_name = re.search(pattern, options["domain"]self.).group()
+        self.region_name = re.search(pattern, self.options["domain"]).group()
         
         if self.region_name: logger.info(f"Bucket region is {self.region_name}")
         else: logger.info("Unable to find bucket region. Cannot run enumeration checks")
