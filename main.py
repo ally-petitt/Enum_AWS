@@ -8,7 +8,7 @@
 #########################################################
 
 import argparse, logging
-from modules import EnumS3, Util
+from modules import EnumS3, Util, EnumInstance
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -37,12 +37,15 @@ def handle_user_input():
     args = argParser.parse_args()
     util = Util()
 
-    domain_info = util.parse_domain(args.domain)
+    # domain_info = util.parse_domain(args.domain)
+    instance = EnumInstance(args.domain)
+
+
     
-    if domain_info["protocol"] == "s3" or "http" in domain_info["protocol"]:
+    if instance.type == "s3":
 
         enum_s3_options = {
-            "domain": domain_info["domain"],
+            "domain": instance.domain,
             "attempt_s3_upload": args.attempt_s3_upload,
             "attempt_s3_download": args.attempt_s3_download or args.all_checks,
             "list_s3_bucket": args.list_s3_bucket or args.all_checks,
@@ -51,6 +54,8 @@ def handle_user_input():
 
         enum_s3 = EnumS3(enum_s3_options)
         enum_s3.run_all_enum_checks()
+    
+    
 
 
 

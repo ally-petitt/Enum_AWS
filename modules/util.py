@@ -20,7 +20,7 @@ class Util:
     ...
     Methods
     -------
-    clean_domain_name(domain: str) -> dict
+    parse_domain(domain: str) -> dict
         Returns the domain info from a URI string as a dictionary containing the domain and protocol
     create_folders(filepath: str) -> None
         Creates necessary directories in order to write to a given filepath (avoids "folder does not
@@ -34,6 +34,8 @@ class Util:
     
     def parse_domain(self, domain: str) -> dict:
         """
+        Returns the domain info from a URI string as a dictionary containing the domain and protocol
+
         Parameters
         ----------
         domain : str
@@ -50,6 +52,8 @@ class Util:
     
     def create_folders(self, filepath: str) -> None:
         """ 
+        Creates necessary directories in order to write to a given filepath
+
         Parameters
         ----------
         filepath : str

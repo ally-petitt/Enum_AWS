@@ -29,11 +29,7 @@ class EnumS3:
 
     Attributes
     ----------
-    domain : str
-        Initial domain name of the enumeration target
-    domain_ip : str
-        IP address of `domain` that was collected from a name server
-    reverse_domain_name : str
+    options["domain"] : str
         The domain name that was returned from a reverse DNS lookup of the IP address
     region_name : str
         The name of the AWS region that the bucket is located in
@@ -48,13 +44,13 @@ class EnumS3:
         Runs all enumeration checks so that data can be collected as an attribute
     lookup_domain()
         Look up the IP address associated with the domain name and do a reverse 
-        DNS lookup to populate the attributes domain_ip and reverse_domain_name
+        DNS lookup to populate the attributes domain_ip and options["domain"]
     get_region_name()
-        Uses regex to get region name out of `reverse_domain_name` and store it
+        Uses regex to get region name out of `options["domain"]` and store it
         in the region_name attribute.
 
     check_bucket()
-        Checks if the reverse_domain_name string is consistent with the naming
+        Checks if the options["domain"] string is consistent with the naming
         conventions of an S3 bucket
     check_bucket_listing()
         Check if permissions allow listing of bucket permissions
@@ -94,33 +90,16 @@ class EnumS3:
         if self.isBucket: self.enum_bucket_permissions()
 
 
-    def lookup_domain(self) -> None:
-        """ 
-        Look up the IP address associated with the domain name and do a reverse 
-        DNS lookup to populate the attributes domain_ip and reverse_domain_name
-        """
-
-        import socket
-
-        try:
-            self.domain_ip = socket.gethostbyname(self.options["domain"])
-            logger.info(f"Domain IP address is {self.domain_ip}")
-
-            self.reverse_domain_name = socket.gethostbyaddr(self.domain_ip)[0]
-            logger.info(f"Result of reverse DNS lookup is domain name {self.reverse_domain_name}")
-        except Exception as e:
-            logger.error(f"Domain lookup failed with error message: {e}")
-
     
     def check_bucket(self) -> None:
         """ 
-        Checks if the reverse_domain_name string is consistent with the naming
+        Checks if the options["domain"] string is consistent with the naming
         conventions of an S3 bucket
         """
         ## TODO: improve regex
         # s3-website-us-west-2.amazonaws.com
         pattern = r"^s3-.*?\.amazonaws\.com$"
-        self.isBucket = bool(re.search(pattern, self.reverse_domain_name))
+        self.isBucket = bool(re.search(pattern, self.options["domain"]))
 
         if self.isBucket: 
             logger.info("Domain is an S3 bucket")
@@ -219,12 +198,12 @@ class EnumS3:
 
     def get_region_name(self) -> None:
         """
-        Uses regex to get region name out of `reverse_domain_name` and store it
+        Uses regex to get region name out of `options["domain"]` and store it
         in the region_name attribute. 
         """
 
         pattern = r"\w+-\w+-[0-9]"
-        self.region_name = re.search(pattern, self.reverse_domain_name).group()
+        self.region_name = re.search(pattern, options["domain"]self.).group()
         
         if self.region_name: logger.info(f"Bucket region is {self.region_name}")
         else: logger.info("Unable to find bucket region. Cannot run enumeration checks")
