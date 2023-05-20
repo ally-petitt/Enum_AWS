@@ -12,9 +12,13 @@ from botocore import UNSIGNED
 from botocore.config import Config
 from botocore.exceptions import ClientError
 import re, os, boto3
+
 import logging
 
+from modules.util import Util
+
 logger = logging.getLogger(__name__)
+util = Util()
 
 class EnumS3:
     '''
@@ -72,14 +76,11 @@ class EnumS3:
         """
 
         self.options = options
+        
 
         # set defaults if they were not selected by user
         if not self.options["output_dir"]: self.options["output_dir"] = "enum_aws_output"
-
-        # TODO: change this to not create directory until it is needed
-        if not os.path.exists(self.options["output_dir"]): 
-            os.mkdir(self.options["output_dir"])
-
+    
     
     def run_all_enum_checks(self) -> None:
         """
@@ -100,11 +101,14 @@ class EnumS3:
 
         import socket
 
-        self.domain_ip = socket.gethostbyname(self.options["domain"])
-        logger.info(f"Domain IP address is {self.domain_ip}")
+        try:
+            self.domain_ip = socket.gethostbyname(self.options["domain"])
+            logger.info(f"Domain IP address is {self.domain_ip}")
 
-        self.reverse_domain_name = socket.gethostbyaddr(self.domain_ip)[0]
-        logger.info(f"Result of reverse DNS lookup is domain name {self.reverse_domain_name}")
+            self.reverse_domain_name = socket.gethostbyaddr(self.domain_ip)[0]
+            logger.info(f"Result of reverse DNS lookup is domain name {self.reverse_domain_name}")
+        except Exception as e:
+            logger.error(f"Domain lookup failed with error message: {e}")
 
     
     def check_bucket(self) -> None:
@@ -112,14 +116,16 @@ class EnumS3:
         Checks if the reverse_domain_name string is consistent with the naming
         conventions of an S3 bucket
         """
-
+        ## TODO: improve regex
         # s3-website-us-west-2.amazonaws.com
-        pattern = r"s3-website-(\w+-)+\w+\.amazonaws\.com$"
+        pattern = r"^s3-.*?\.amazonaws\.com$"
         self.isBucket = bool(re.search(pattern, self.reverse_domain_name))
-        self.get_region_name()
 
-        if self.isBucket: logger.info("Domain is an S3 bucket")
-        else: logger.warning("Domain is NOT an S3 bucket")
+        if self.isBucket: 
+            logger.info("Domain is an S3 bucket")
+            self.get_region_name()
+        else: 
+            logger.warning("Domain is NOT an S3 bucket")
 
 
     def enum_bucket_permissions(self) -> None:
@@ -179,15 +185,17 @@ class EnumS3:
             list of filenames returned from self.check_bucket_listing()
         """
 
-        download_dir = f'{self.options["output_dir"]}/s3_download/'
-        os.mkdir(download_dir)
+        
 
         logger.info("downloading files")
         for filename in filenames:
+            filepath = f'{self.options["output_dir"]}/s3_download/{filename}'
+            util.create_folders(filepath)
+
             s3.download_file(
                 self.options["domain"], 
                 filename, 
-                f'{download_dir}/{filename}'
+                filepath
             )
 
 
@@ -215,7 +223,7 @@ class EnumS3:
         in the region_name attribute. 
         """
 
-        pattern = r"(\w+-)(\w+-)[0-9]"
+        pattern = r"\w+-\w+-[0-9]"
         self.region_name = re.search(pattern, self.reverse_domain_name).group()
         
         if self.region_name: logger.info(f"Bucket region is {self.region_name}")
