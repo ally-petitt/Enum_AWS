@@ -66,12 +66,12 @@ class EnumInstance:
         logger.info("Determining instance type...")
 
         protocol_type = self.check_protocol()
-        domain_type = self.find_instance_type()
+        domain_type = self.extract_instance_type()
 
         if domain_type == "":
             raise Exception("Instance could not be identified. Exiting...")
         
-        elif (protocol_type != domain_type):
+        elif (protocol_type != domain_type and protocol_type != ""):
             raise Exception("Instance protocol does not match instance type. Exiting...")
         
         self.type = domain_type
@@ -81,14 +81,12 @@ class EnumInstance:
             
 
 
-
-
     def lookup_domain(self) -> None:
         """ 
         Look up the IP address associated with the domain name and do a reverse 
         DNS lookup to populate the attributes domain_ip and reverse_domain_name
         """
-
+        logger.info(self.domain)
         try:
             domain_ip = socket.gethostbyname(self.domain)
             logger.info(f"Domain IP address is {domain_ip}")
@@ -97,6 +95,7 @@ class EnumInstance:
             logger.info(f"Result of reverse DNS lookup is domain name {self.reverse_domain_name}")
         except Exception as e:
             logger.error(f"Domain lookup failed with error message: {e}")
+            exit()
 
 
     
@@ -113,7 +112,7 @@ class EnumInstance:
         return type_
 
 
-    def find_instance_type(self) -> str:
+    def extract_instance_type(self) -> str:
         """ 
         Iterates through potential instance types and populates value of self.type
         if a type is found to be valid
@@ -143,7 +142,7 @@ class EnumInstance:
         """
 
         try: 
-            pattern = r"\w+-\w+-[0-9]"
+            pattern = r"[a-z]{1,2}-[a-z]{1,9}-[0-9]"
             self.region_name = re.search(pattern, self.reverse_domain_name).group()
             
             logger.info(f"Instance region is {self.region_name}")

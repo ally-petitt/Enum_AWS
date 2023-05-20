@@ -70,3 +70,4 @@ region=us-east-1
 * Add more enumeration methods for more cloud services
 * Refactor code to make it cleaner
 * Make output prettier
+* Fix bugs!

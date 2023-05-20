@@ -39,15 +39,40 @@ class Util:
         Parameters
         ----------
         domain : str
-            URI to extract the domain name from
+            Function to extract domain from a URI
         """
 
-        parsed = urlparse(domain)
+        if self.check_valid_domain(domain):
+            return { 
+                "domain": domain,
+                "protocol": ""
+            }
 
+        parsed = urlparse(domain)
         return {
-            "domain": parsed.hostname,
+            "domain": parsed.netloc,
             "protocol": parsed.scheme
         }
+
+    
+    def check_valid_domain(self, domain: str) -> bool:
+        """
+        Function to check whether a string is a valid domain
+
+        Paramters
+        ---------
+        domain : str
+            Domain to check 
+        """
+
+        try:
+            pattern = r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$"
+            isDomain = bool(re.search(pattern, domain).group())
+
+            return isDomain 
+        except:
+            return False
+            
 
     
     def create_folders(self, filepath: str) -> None:

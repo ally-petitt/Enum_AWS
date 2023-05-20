@@ -40,19 +40,23 @@ def handle_user_input():
     # domain_info = util.parse_domain(args.domain)
     instance = EnumInstance(args.domain)
 
+    options = {
+        "domain": instance.domain,
+        "region_name": instance.region_name,
+        "output_dir": args.output_dir,
+    }
+
 
     
     if instance.type == "s3":
 
-        enum_s3_options = {
-            "domain": instance.domain,
-            "attempt_s3_upload": args.attempt_s3_upload,
-            "attempt_s3_download": args.attempt_s3_download or args.all_checks,
-            "list_s3_bucket": args.list_s3_bucket or args.all_checks,
-            "output_dir": args.output_dir
-        }
+        options["attempt_s3_upload"] = args.attempt_s3_upload,
+        options["attempt_s3_download"] = args.attempt_s3_download or args.all_checks,
+        options["list_s3_bucket"] = args.list_s3_bucket or args.all_checks,
 
-        enum_s3 = EnumS3(enum_s3_options)
+        print(options)
+
+        enum_s3 = EnumS3(options)
         enum_s3.run_all_enum_checks()
     
     

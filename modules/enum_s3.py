@@ -84,8 +84,7 @@ class EnumS3:
         if permitted in user settings
         """
 
-        if not self.region_name: return
-        s3_client = boto3.client('s3', region_name=self.region_name, config=Config(signature_version=UNSIGNED))
+        s3_client = boto3.client('s3', region_name=self.options["region_name"], config=Config(signature_version=UNSIGNED))
 
         if self.options["attempt_s3_upload"]: self.check_bucket_upload(s3_client)
         if self.options["attempt_s3_download"]: 
@@ -105,7 +104,7 @@ class EnumS3:
             the s3 client used to interact with the bucket
         """
 
-        # s3client = boto3.client('s3', region_name=self.region_name, config=Config(signature_version=UNSIGNED))
+        # s3client = boto3.client('s3', region_name=self.options["region_name"], config=Config(signature_version=UNSIGNED))
         bucket_files = s3.list_objects(Bucket=self.options["domain"])["Contents"]
         filenames = []
 
