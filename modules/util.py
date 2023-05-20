@@ -20,7 +20,7 @@ class Util:
     ...
     Methods
     -------
-    clean_domain_name(domain: str) -> dict
+    parse_domain(domain: str) -> dict
         Returns the domain info from a URI string as a dictionary containing the domain and protocol
     create_folders(filepath: str) -> None
         Creates necessary directories in order to write to a given filepath (avoids "folder does not
@@ -34,22 +34,51 @@ class Util:
     
     def parse_domain(self, domain: str) -> dict:
         """
+        Returns the domain info from a URI string as a dictionary containing the domain and protocol
+
         Parameters
         ----------
         domain : str
-            URI to extract the domain name from
+            Function to extract domain from a URI
         """
 
-        parsed = urlparse(domain)
+        if self.check_valid_domain(domain):
+            return { 
+                "domain": domain,
+                "protocol": ""
+            }
 
+        parsed = urlparse(domain)
         return {
-            "domain": parsed.hostname,
+            "domain": parsed.netloc,
             "protocol": parsed.scheme
         }
 
     
+    def check_valid_domain(self, domain: str) -> bool:
+        """
+        Function to check whether a string is a valid domain
+
+        Paramters
+        ---------
+        domain : str
+            Domain to check 
+        """
+
+        try:
+            pattern = r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$"
+            isDomain = bool(re.search(pattern, domain).group())
+
+            return isDomain 
+        except:
+            return False
+            
+
+    
     def create_folders(self, filepath: str) -> None:
         """ 
+        Creates necessary directories in order to write to a given filepath
+
         Parameters
         ----------
         filepath : str
@@ -60,12 +89,6 @@ class Util:
         directories = "/".join(path_list[0:len(path_list)-1])
 
         if os.path.exists(directories): return
-
-        # create folders for everything up to the last forward slash
-        # since those are the the ones that are necessary to create
-        # path_list = filepath.split("/")
-        # directories = "/".join(path_list[0:len(path_list)-1])
-
         Path(directories).mkdir(parents=True, exist_ok=True)
 
         
