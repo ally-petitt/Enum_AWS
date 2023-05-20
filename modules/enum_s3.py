@@ -29,29 +29,18 @@ class EnumS3:
 
     Attributes
     ----------
-    options["domain"] : str
-        The domain name that was returned from a reverse DNS lookup of the IP address
-    region_name : str
-        The name of the AWS region that the bucket is located in
     options : dict
         The options that were selected by the user (see `enum_s3_options` variable
         in ../main.py)
+    options["domain"] : str
+        The domain name that was returned from a reverse DNS lookup of the IP address
 
 
     Methods
     -------
     run_all_enum_checks()
         Runs all enumeration checks so that data can be collected as an attribute
-    lookup_domain()
-        Look up the IP address associated with the domain name and do a reverse 
-        DNS lookup to populate the attributes domain_ip and options["domain"]
-    get_region_name()
-        Uses regex to get region name out of `options["domain"]` and store it
-        in the region_name attribute.
 
-    check_bucket()
-        Checks if the options["domain"] string is consistent with the naming
-        conventions of an S3 bucket
     check_bucket_listing()
         Check if permissions allow listing of bucket permissions
     check_bucket_upload()
@@ -84,10 +73,8 @@ class EnumS3:
         Runs all enumeration checks so that data can be collected as an attribute
         """
 
-        self.lookup_domain()
-        self.check_bucket()
 
-        if self.isBucket: self.enum_bucket_permissions()
+        self.enum_bucket_permissions()
 
 
 
@@ -108,7 +95,7 @@ class EnumS3:
         
 
     
-    def check_bucket_listing(self, s3: object) -> None:
+    def check_bucket_listing(self, s3: object) -> list:
         """ 
         Check if permissions allow listing of bucket permissions
 
@@ -120,6 +107,7 @@ class EnumS3:
 
         # s3client = boto3.client('s3', region_name=self.region_name, config=Config(signature_version=UNSIGNED))
         bucket_files = s3.list_objects(Bucket=self.options["domain"])["Contents"]
+        filenames = []
 
         if not bucket_files:
             logger.info("Unable to list contents of bucket")
@@ -128,12 +116,11 @@ class EnumS3:
             logger.info("Successfully recieved contents of bucket")
             logger.info("Filename \t Size \t Last Modified")
 
-            filenames = []
             for file_ in bucket_files:
                 filenames += [file_['Key']]
                 logger.info(f"{file_['Key']} \t {file_['Size']} \t {file_['LastModified']}")
             
-            return filenames
+        return filenames
 
 
     def check_bucket_download(self, s3: object, filenames: list) -> None:
@@ -178,18 +165,6 @@ class EnumS3:
         except:
             logger.warn("Unable to upload to the bucket")
     
-
-    def get_region_name(self) -> None:
-        """
-        Uses regex to get region name out of `options["domain"]` and store it
-        in the region_name attribute. 
-        """
-
-        pattern = r"\w+-\w+-[0-9]"
-        self.region_name = re.search(pattern, self.options["domain"]).group()
-        
-        if self.region_name: logger.info(f"Bucket region is {self.region_name}")
-        else: logger.info("Unable to find bucket region. Cannot run enumeration checks")
 
 
 

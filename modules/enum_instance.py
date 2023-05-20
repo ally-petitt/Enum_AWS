@@ -8,8 +8,7 @@
 # 
 #########################################################
 
-import logging
-import socket
+import logging, socket, re
 
 from modules import Util
 
@@ -30,6 +29,18 @@ class EnumInstance:
         The domain name given by the user
     reverse_domain_name : str
         The domain name found through reverse DNS lookup
+    region_name : str
+        Name of the region that the instance is located in
+
+    Methods
+    -------
+    enumerate_instance() -> None
+        Method to carry out the steps of enumerating the instance
+    find_instance_type() -> None
+        Method to determine the instance type (s3, ec2, etc)
+    lookup_domain -> None
+        Look up the IP address associated with the domain name and do a reverse 
+        DNS lookup to populate the attributes domain_ip and reverse_domain_name
 
     """
 
@@ -39,21 +50,35 @@ class EnumInstance:
         self.protocol = domain_info["protocol"]
 
         # automatically perform enumerations on initialization of class
+        self.enumerate_instance()
+
+
+    def enumerate_instance(self) -> None:
+        '''Method to carry out the steps of enumerating the instance'''
+
         self.find_instance_type()
+        self.get_region_name()
 
     
     def find_instance_type(self) -> None:
+        '''Method to determine the instance type (s3, ec2, etc)'''
+
         logger.info("Determining instance type...")
 
-        domain_info = util.parse_domain(self.domain)
+        protocol_type = self.check_protocol()
+        domain_type = self.find_instance_type()
 
-        if self.check_protocol() and self.type \
-            or self.lookup_domain() and self.type:
-            logger.info(f"Instance was found to be of type {self.type}")
+        if domain_type == "":
+            raise Exception("Instance could not be identified. Exiting...")
         
-        else:
-            logger.info("Instance could not be identified. Exiting...")
-            exit()
+        elif (protocol_type != domain_type):
+            raise Exception("Instance protocol does not match instance type. Exiting...")
+        
+        self.type = domain_type
+
+        logger.info(f"Instance was found to be of type {self.type}")
+
+            
 
 
 
@@ -75,31 +100,54 @@ class EnumInstance:
 
 
     
-    def check_protocol(self) -> None:
+    def check_protocol(self) -> str:
+        """
+        Check the protocol if included on the user's URI string to determine instance type
+        """
+
+        type_ = ""
+
         if self.protocol == "s3":
-            self.type = "s3"
-            return True 
+            type_ = "s3"
         
-        else:
-            return False
+        return type_
 
 
-    def check_bucket(self) -> None:
+    def find_instance_type(self) -> str:
         """ 
         Iterates through potential instance types and populates value of self.type
         if a type is found to be valid
         """
-        ## TODO: improve regex
-        # s3-website-us-west-2.amazonaws.com
+
+        self.lookup_domain()
+
         pattern = r"^{}-.*?\.amazonaws\.com$"
         types = ["s3", "ec2"]
+        type_ = ""
 
         for instance_type in types:
-            isType = bool(re.search(pattern.format(instance_type), self.domain))
+            isType = bool(re.search(pattern.format(instance_type), self.reverse_domain_name))
 
             if isType: 
-                logger.info(f"Instance was found to be of type {self.type}")
-                self.get_region_name()
-                return True
+                type_ = instance_type
+                break
+        
+        return type_
 
-        return False
+
+
+    def get_region_name(self) -> None:
+        """
+        Uses regex to get region name out of self.reverse_domain_name and store it
+        in the region_name attribute. 
+        """
+
+        try: 
+            pattern = r"\w+-\w+-[0-9]"
+            self.region_name = re.search(pattern, self.reverse_domain_name).group()
+            
+            logger.info(f"Instance region is {self.region_name}")
+
+        except:
+            logger.info("Unable to find instance region. Cannot run enumeration checks. Exiting...")
+            exit()
