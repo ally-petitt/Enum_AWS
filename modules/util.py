@@ -60,12 +60,6 @@ class Util:
         directories = "/".join(path_list[0:len(path_list)-1])
 
         if os.path.exists(directories): return
-
-        # create folders for everything up to the last forward slash
-        # since those are the the ones that are necessary to create
-        # path_list = filepath.split("/")
-        # directories = "/".join(path_list[0:len(path_list)-1])
-
         Path(directories).mkdir(parents=True, exist_ok=True)
 
         

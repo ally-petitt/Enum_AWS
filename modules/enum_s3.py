@@ -13,6 +13,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 import re, os, boto3
 
+from tqdm import tqdm
 import logging
 
 from modules.util import Util
@@ -81,7 +82,7 @@ class EnumS3:
         # set defaults if they were not selected by user
         if not self.options["output_dir"]: self.options["output_dir"] = "enum_aws_output"
     
-    
+
     def run_all_enum_checks(self) -> None:
         """
         Runs all enumeration checks so that data can be collected as an attribute
@@ -185,10 +186,8 @@ class EnumS3:
             list of filenames returned from self.check_bucket_listing()
         """
 
-        
-
         logger.info("downloading files")
-        for filename in filenames:
+        for filename in tqdm(filenames):
             filepath = f'{self.options["output_dir"]}/s3_download/{filename}'
             util.create_folders(filepath)
 
@@ -217,6 +216,7 @@ class EnumS3:
         except:
             logger.warn("Unable to upload to the bucket")
     
+
     def get_region_name(self) -> None:
         """
         Uses regex to get region name out of `reverse_domain_name` and store it

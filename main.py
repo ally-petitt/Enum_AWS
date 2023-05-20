@@ -1,3 +1,12 @@
+########################################################
+# 
+# Description: AWS Enumeration Tool in Python
+# 
+# Author: Ally Petitt <allypetitt@proton.me>
+# Created: May 2023
+# 
+#########################################################
+
 import argparse, logging
 from modules import EnumS3, Util
 
@@ -22,10 +31,6 @@ argParser.add_argument("-a", "--all-checks", required=False,
                             action="store_true", help="run all enumeration checks")
 argParser.add_argument("-o", "--output-dir", required=False, help="Directory to output \
                             downloaded and log files into (default: enum_aws_output/)")
-# argParser.add_argument("-u", "--output-dir", required=False, help="Directory to output \
-#                             downloaded and log files into (default: enum_aws_output/)")
-# argParser.add_argument("-p", "--output-dir", required=False, help="Directory to output \
-#                             downloaded and log files into (default: enum_aws_output/)")
 
 
 def handle_user_input():
