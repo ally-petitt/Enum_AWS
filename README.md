@@ -46,3 +46,4 @@ $ python ./main.py -d flaws.cloud -a -o output/ -u upload_test.txt
 ## Future Steps
 * Add more enumeration methods for more cloud services
 * Refactor code to make it cleaner
+* Make output prettier
