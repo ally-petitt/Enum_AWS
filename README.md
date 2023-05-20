@@ -43,6 +43,29 @@ $ python ./main.py -d flaws.cloud -a -o output/ -u upload_test.txt
 2023-05-13 22:50:58,553 - downloading files
 ```
 
+### Authenticating with AWS
+As explained in the (Boto3 documentation)[https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration],
+if you wish to authenticate in your AWS account, you must first configure your credential file which
+is located at `~/.aws/credentials` by default. This can be done in 1 of 2 ways:
+
+1. Using the AWS CLI
+```
+$ aws configure
+```
+
+2. Manually creating the credential file
+```
+[default]
+aws_access_key_id = YOUR_ACCESS_KEY
+aws_secret_access_key = YOUR_SECRET_KEY
+```
+
+You can optionally add a default region to the configuration file at `~/.aws/config`
+```
+[default]
+region=us-east-1
+```
+
 ## Future Steps
 * Add more enumeration methods for more cloud services
 * Refactor code to make it cleaner
