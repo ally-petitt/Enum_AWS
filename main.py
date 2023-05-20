@@ -34,7 +34,7 @@ def handle_user_input():
 
     domain_info = util.parse_domain(args.domain)
     
-    if domain_info["protocol"] == "s3":
+    if domain_info["protocol"] == "s3" or "http" in domain_info["protocol"]:
 
         enum_s3_options = {
             "domain": domain_info["domain"],

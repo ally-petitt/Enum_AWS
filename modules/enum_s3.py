@@ -18,6 +18,7 @@ import logging
 from modules.util import Util
 
 logger = logging.getLogger(__name__)
+util = Util()
 
 class EnumS3:
     '''
@@ -79,13 +80,7 @@ class EnumS3:
 
         # set defaults if they were not selected by user
         if not self.options["output_dir"]: self.options["output_dir"] = "enum_aws_output"
-
-        # TODO: change this to not create directory until it is needed
-        if not os.path.exists(self.options["output_dir"]): 
-            os.mkdir(self.options["output_dir"])
-
-        # util = Util()
-        # self.options["domain"] = util.clean_domain_name(self.options["domain"])
+    
     
     def run_all_enum_checks(self) -> None:
         """
@@ -121,9 +116,9 @@ class EnumS3:
         Checks if the reverse_domain_name string is consistent with the naming
         conventions of an S3 bucket
         """
-
+        ## TODO: improve regex
         # s3-website-us-west-2.amazonaws.com
-        pattern = r"s3-website-(\w+-)+\w+\.amazonaws\.com$"
+        pattern = r"^s3-.*?\.amazonaws\.com$"
         self.isBucket = bool(re.search(pattern, self.reverse_domain_name))
 
         if self.isBucket: 
@@ -190,15 +185,17 @@ class EnumS3:
             list of filenames returned from self.check_bucket_listing()
         """
 
-        download_dir = f'{self.options["output_dir"]}/s3_download/'
-        if not os.path.exists(download_dir): os.mkdir(download_dir)
+        
 
         logger.info("downloading files")
         for filename in filenames:
+            filepath = f'{self.options["output_dir"]}/s3_download/{filename}'
+            util.create_folders(filepath)
+
             s3.download_file(
                 self.options["domain"], 
                 filename, 
-                f'{download_dir}/{filename}'
+                filepath
             )
 
 
@@ -226,7 +223,7 @@ class EnumS3:
         in the region_name attribute. 
         """
 
-        pattern = r"(\w+-)(\w+-)[0-9]"
+        pattern = r"\w+-\w+-[0-9]"
         self.region_name = re.search(pattern, self.reverse_domain_name).group()
         
         if self.region_name: logger.info(f"Bucket region is {self.region_name}")

@@ -7,9 +7,9 @@
 # 
 #########################################################
 
-import re
-import logging
+import re, os, logging
 from urllib.parse import urlparse
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,9 @@ class Util:
     -------
     clean_domain_name(domain: str) -> dict
         Returns the domain info from a URI string as a dictionary containing the domain and protocol
+    create_folders(filepath: str) -> None
+        Creates necessary directories in order to write to a given filepath (avoids "folder does not
+        exit error")
 
     '''
 
@@ -43,4 +46,26 @@ class Util:
             "domain": parsed.hostname,
             "protocol": parsed.scheme
         }
+
+    
+    def create_folders(self, filepath: str) -> None:
+        """ 
+        Parameters
+        ----------
+        filepath : str
+            Path to the file to write to. 
+        """
+
+        path_list = filepath.split("/")
+        directories = "/".join(path_list[0:len(path_list)-1])
+
+        if os.path.exists(directories): return
+
+        # create folders for everything up to the last forward slash
+        # since those are the the ones that are necessary to create
+        # path_list = filepath.split("/")
+        # directories = "/".join(path_list[0:len(path_list)-1])
+
+        Path(directories).mkdir(parents=True, exist_ok=True)
+
         
